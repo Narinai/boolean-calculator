@@ -27,7 +27,7 @@ namespace boolcalc {
         virtual ~Node() = default;
     };
 
-    class ConstNode : Node {
+    class ConstNode : public Node {
         const bool value_;
     public:
         explicit ConstNode(const bool value) : value_(value) { };
@@ -41,7 +41,7 @@ namespace boolcalc {
         ~ConstNode() override = default;
     };
 
-    class VariableNode : Node {
+    class VariableNode : public Node {
         const char id_;
     public:
         explicit VariableNode(const char id) : id_(id) { };
@@ -65,15 +65,16 @@ namespace boolcalc {
         ~VariableNode() override = default;
     };
 
-    class NegNode : Node {
+    class NegNode : public Node {
     private:
         Node *child_;
     public:
         explicit NegNode(Node *child) : child_(child) { };
+        std::string String() const override { return "~" + child_->String(); }
         bool Calculate(std::map<unsigned int, bool> vars, std::istream &input, std::ostream &output) const override { return !child_->Calculate(vars, input, output); }
     };
 
-    class OperationNode : Node {
+    class OperationNode : public Node {
     protected:
         Strategy *strategy_;
         std::vector<Node *> children_ = { };
