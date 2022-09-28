@@ -7,6 +7,7 @@
 
 namespace boolcalc {
 
+    // Pattern strategy, class OperatorNode uses them to calculate value and fetch symbol
     class Strategy {
     public:
         [[nodiscard]] virtual char DisplaySign() const = 0;
