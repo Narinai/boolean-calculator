@@ -23,8 +23,10 @@ namespace boolcalc {
                 std::ostream &output
         ) const = 0;
         [[maybe_unused]] [[nodiscard]] virtual std::string String() const = 0;
+        virtual Symbol symbol() const = 0;
 
         virtual ~Node() = default;
+
     };
 
     class ConstNode : public Node {
@@ -38,6 +40,8 @@ namespace boolcalc {
                 std::ostream &output
         ) const override { return value_; };
         [[nodiscard]] std::string String() const override { return std::to_string(value_); }
+        [[nodiscard]] enum Symbol symbol() const override { return  kConst; }
+
         ~ConstNode() override = default;
     };
 
@@ -61,7 +65,8 @@ namespace boolcalc {
             vars.insert({id_, tmp});
             return tmp;
         };
-        [[nodiscard]] std::string String() const override { return std::to_string(id_); }
+        [[nodiscard]] std::string String() const override { return std::string(1, id_); }
+        [[nodiscard]] enum Symbol symbol() const override { return  kVariable; }
         ~VariableNode() override = default;
     };
 
@@ -71,6 +76,7 @@ namespace boolcalc {
     public:
         explicit NegNode(Node *child) : child_(child) { };
         std::string String() const override { return "~" + child_->String(); }
+        [[nodiscard]] enum Symbol symbol() const override { return  kNeg; }
         bool Calculate(std::map<unsigned int, bool> vars, std::istream &input, std::ostream &output) const override { return !child_->Calculate(vars, input, output); }
     };
 
@@ -79,6 +85,19 @@ namespace boolcalc {
         Strategy *strategy_;
         std::vector<Node *> children_ = { };
     public:
+        void Simplify() {
+            if (symbol() == (children_[1])->symbol()) {
+                OperationNode *operation_node = dynamic_cast<OperationNode *>(children_[1]);
+                children_.erase(children_.begin()+1);
+                children_.insert(children_.end(), operation_node->children_.begin(), operation_node->children_.end());
+            }
+            if (symbol() == (children_[0])->symbol()) {
+                OperationNode *operation_node = dynamic_cast<OperationNode *>(children_[0]);
+                children_.erase(children_.begin());
+                children_.insert(children_.end(), operation_node->children_.begin(), operation_node->children_.end());
+            }
+        };
+
         OperationNode(Strategy *strategy) : strategy_(strategy) { };
 
         void AddChild(Node *child) {
@@ -101,13 +120,16 @@ namespace boolcalc {
         [[maybe_unused]] [[nodiscard]] std::string String() const override {
             std::string result = "(";
             const char sign = strategy_->DisplaySign();
-            for (const Node *child : children_) {
-                result += child->String() + " " + sign + " ";
+            for (auto i = children_.end()-1; i >= children_.begin() ; --i) {
+                result += (*i)->String() + " " + sign + " ";
             }
-            result.erase(result.end()-2, result.end());
+
+            result.erase(result.end()-3, result.end());
             result += ")";
             return result;
         };
+
+        [[nodiscard]] enum Symbol symbol() const override { return  strategy_->DisplaySign(); }
         ~OperationNode() override {
             delete strategy_;
         };

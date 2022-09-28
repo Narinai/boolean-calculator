@@ -16,6 +16,8 @@ namespace boolcalc {
         Node *expression_;
         static bool Priority(const char a, const char b);
         static Node *ParseNode(std::stack<Node *> &nodes, std::stack<char> &symbols);
+        static void SimplifyTree(Node *root);
+
     public:
         Expression(std::string string);
         ~Expression() {};

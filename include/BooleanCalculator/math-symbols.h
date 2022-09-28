@@ -20,7 +20,9 @@ namespace boolcalc {
         kNor            = '^',
         kLeftBracket    = '(',
         kRightBracket   = ')',
-        kNeg            = '~'
+        kNeg            = '~',
+        kVariable,
+        kConst
     };
 }
 

@@ -11,6 +11,7 @@ namespace boolcalc {
         const static char priority[] = {
                 kRightBracket, '\0',
                 kNeg, '\0',
+                kAnd, '\0',
                 kXor, '\0',
                 kOr, '\0',
                 kImpl, kRevImpl, kEq, kNand, kNor, '\1'
@@ -37,7 +38,7 @@ namespace boolcalc {
                         b_priority = j;
                     }
                     if (a_priority && b_priority) {
-                        return a_priority >= b_priority;
+                        return a_priority > b_priority;
                     }
             }
             if (for_break)
@@ -116,6 +117,13 @@ namespace boolcalc {
         return new_node;
     }
 
+
+    void Expression::SimplifyTree(boolcalc::Node *root) {
+        OperationNode *operation_node = dynamic_cast<OperationNode *>(root);
+        if (!operation_node) return;
+        operation_node->Simplify();
+    }
+
     Expression::Expression(std::string string) {
         std::stack<Node *> nodes;
         std::stack<char> symbols;
@@ -157,6 +165,8 @@ namespace boolcalc {
         }
         while (symbols.size() != 0)
             ParseNode(nodes, symbols);
+
+        SimplifyTree(nodes.top());
 
         expression_ = nodes.top();
     }
