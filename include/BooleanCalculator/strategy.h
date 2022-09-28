@@ -9,69 +9,78 @@ namespace boolcalc {
 
     class Strategy {
     public:
-        virtual char DisplaySign() const = 0;
-        virtual bool Calculate(bool a, bool b) const = 0;
+        [[nodiscard]] virtual char DisplaySign() const = 0;
+        [[nodiscard]] virtual bool Calculate(bool a, bool b) const = 0;
+        virtual ~Strategy() = default;
     };
 
     class And : Strategy {
-        char DisplaySign() const override { return '&'; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return '&'; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return b && a;
         }
+        ~And() override = default;
     };
 
     class Or : Strategy {
-        char DisplaySign() const override { return 'V'; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return 'V'; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return b || a;
         }
+        ~Or() override = default;
     };
 
 
     class Impl : Strategy {
-        char DisplaySign() const override { return '>'; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return '>'; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !b && a;
         }
+        ~Impl() override = default;
     };
 
 
     class RevImpl : Strategy {
-        char DisplaySign() const override { return '<'; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return '<'; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return b && !a;
         }
+        ~RevImpl() override = default;
     };
 
 
     class Xor : Strategy {
-        char DisplaySign() const override { return '+'; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return '+'; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return a != b;
         }
+        ~Xor() override = default;
     };
 
     class Eq : Strategy {
-        char DisplaySign() const override { return '='; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return '='; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return a == b;
         }
+        ~Eq() override = default;
     };
 
 
     class Sheffer : Strategy {
-        char DisplaySign() const override { return '|'; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return '|'; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !a || !b;
         }
+        ~Sheffer() override = default;
     };
 
 
     class Pierce : Strategy {
-        char DisplaySign() const override { return '^'; }
-        bool Calculate(bool a, bool b) const override {
+        [[nodiscard]] char DisplaySign() const override { return '^'; }
+        [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !a && !b;
         }
+        ~Pierce() override = default;
     };
 
 } // boolcalc
