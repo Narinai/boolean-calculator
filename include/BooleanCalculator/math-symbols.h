@@ -6,17 +6,21 @@
 #define MYFANTASTICPROJECT_MATH_SYMBOLS_H
 
 namespace boolcalc {
+
     // All symbols for calculator
     // a-z are reserved for variables
     enum Symbol {
-        kAnd     = '&',
-        kOr      = 'V',
-        kImpl    = '>',
-        kRevImpl = '<',
-        kXor     = '+',
-        kEq      = '=',
-        kNand    = '|',
-        kNor     = '^'
+        kAnd            = '&',
+        kOr             = 'V',
+        kImpl           = '>',
+        kRevImpl        = '<',
+        kXor            = '+',
+        kEq             = '=',
+        kNand           = '|',
+        kNor            = '^',
+        kLeftBracket    = '(',
+        kRightBracket   = ')',
+        kNeg            = '~'
     };
 }
 
