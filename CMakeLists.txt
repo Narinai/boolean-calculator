@@ -4,14 +4,15 @@ project(MyFantasticProject VERSION 0.1)
 
 set(CMAKE_CXX_STANDARD 20)
 
-option(ItIsALib         "Is it a library?"              ON)
+option(ItIsALib         "Is it a library?"              OFF)
 option(IsHeadersOnly    "Is it a header-only lib?"      OFF)
-option(IsShared         "If it is a lib, is it SHARED?" ON)
+option(IsShared         "If it is a lib, is it SHARED?" OFF)
 option(UseClangTidy     "Use ClangTidy"                 ON)
 option(UseCPPCheck      "Use CPPCheck"                  ON)
 option(UseCCache        "Use CCache"                    ON)
 option(UseIPO           "Use IPO"                       ON)
 
+set(ItIsALib false)
 
 
 # Files
