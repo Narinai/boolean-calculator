@@ -5,6 +5,8 @@
 #ifndef MYFANTASTICPROJECT_STRATEGY_H
 #define MYFANTASTICPROJECT_STRATEGY_H
 
+#include "math-symbols.h"
+
 namespace boolcalc {
 
     // Pattern strategy, class OperatorNode uses them to calculate value and fetch symbol
@@ -16,7 +18,7 @@ namespace boolcalc {
     };
 
     class And : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return '&'; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kAnd; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return b && a;
         }
@@ -24,7 +26,7 @@ namespace boolcalc {
     };
 
     class Or : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return 'V'; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kOr; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return b || a;
         }
@@ -33,7 +35,7 @@ namespace boolcalc {
 
 
     class Impl : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return '>'; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kImpl; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !b && a;
         }
@@ -42,7 +44,7 @@ namespace boolcalc {
 
 
     class RevImpl : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return '<'; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kRevImpl; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return b && !a;
         }
@@ -51,7 +53,7 @@ namespace boolcalc {
 
 
     class Xor : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return '+'; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kXor; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return a != b;
         }
@@ -59,7 +61,7 @@ namespace boolcalc {
     };
 
     class Eq : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return '='; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kEq; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return a == b;
         }
@@ -68,7 +70,7 @@ namespace boolcalc {
 
 
     class Sheffer : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return '|'; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kNand; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !a || !b;
         }
@@ -77,7 +79,7 @@ namespace boolcalc {
 
 
     class Pierce : Strategy {
-        [[nodiscard]] char DisplaySign() const override { return '^'; }
+        [[nodiscard]] char DisplaySign() const override { return Symbol::kNor; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !a && !b;
         }
