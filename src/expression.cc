@@ -6,6 +6,111 @@
 
 namespace boolcalc {
 
+    //
+    // "Lazy-loaders"
+    //
+
+    void Expression::GenerateString() {
+        if (!string_.empty()) return;
+        string_ = expression_->String();
+    }
+
+    void Expression::GenerateTruthTable() {
+        if (truth_table_ != nullptr) return;
+        GenerateVariables();
+        std::map<char, bool> vars;
+        for (int i = 0; i < size_; ++i)
+            vars.insert({variables_[i], false});
+        truth_table_ = new bool[1ULL << size_];
+        for (int i = 0; i < 1ULL << size_; ++i) {
+            truth_table_[i] = expression_->Calculate(vars, std::cin, std::cout);
+            IncrementVariables(vars);
+        }
+    }
+
+    void Expression::GenerateZhegalkin() {
+        if (zhegalkin_ != nullptr) return;
+        GenerateTruthTable();
+        const uint64_t array_size = 1ULL << size_;
+        zhegalkin_ = new bool[array_size];
+        bool *tmp =  new bool[array_size];
+        std::copy(truth_table_, truth_table_ + array_size, zhegalkin_);
+        bool flag = true;
+        for (int i = 0; i < size_; ++i) {
+            for (int j = 0; j < array_size; ++j) {
+                if (!(j % (1ULL << i)))
+                    flag = !flag;
+                if (flag) {
+                    tmp[j] = (zhegalkin_[j] != zhegalkin_[j - (1ULL << (i))]);
+                } else {
+                    tmp[j] = zhegalkin_[j];
+                }
+            }
+            std::copy(tmp, tmp + array_size, zhegalkin_);
+        }
+        delete[] tmp;
+    }
+
+    void Expression::GenerateVariables() {
+        if (variables_ != nullptr) return;
+        std::set<char> vars;
+        expression_->FindVariables(vars);
+        variables_ = new char[vars.size()];
+        auto j = vars.begin();
+        for (int i = 0; i < vars.size(); ++i, ++j)
+            variables_[i] = *j;
+    }
+
+    //
+    // Public
+    //
+
+    Expression::Expression(const std::string& string) {
+        std::stack<Node *> nodes;
+        std::stack<Symbol> symbols;
+
+        for (auto character : string) {
+            switch (character) {
+                case ' ': {   // Empty line
+                    continue;
+                }
+                case '1':     // Constants
+                case '0': {
+                    nodes.push(new ConstNode(character - '0'));
+                    break;
+                }
+                default: {    // Operator or variable
+                    if (character >= 'a' && character <= 'z') {
+                        nodes.push(new VariableNode(character));
+                    } else {
+                        bool skip = false;
+                        while (!symbols.empty()) {
+                            if (character == kLeftBracket)
+                                break;
+                            if (character == kRightBracket && symbols.top() == kLeftBracket) {
+                                nodes.pop();
+                                skip = true;
+                            }
+                            if (Priority(symbols.top(), Symbol(character)) != 1)
+                                break;
+                            ParseNode(nodes, symbols);
+                        }
+                        if (!skip)
+                            symbols.push(Symbol(character));
+                    }
+                } // default
+
+            } // switch
+        }
+        while (!symbols.empty())
+            ParseNode(nodes, symbols);
+
+        expression_ = nodes.top();
+
+        SimplifyTree();
+
+    }
+
     int Expression::Priority(Symbol a, Symbol b) {
         // ")\0~\0&\0+\0v\0><=|^\0(\0\0";
         const static char priority[] = {
@@ -118,64 +223,11 @@ namespace boolcalc {
         return new_node;
     }
 
-    void Expression::SimplifyTree(boolcalc::Node *root) {
-        auto *operation_node = dynamic_cast<OperationNode *>(root);
+    void Expression::SimplifyTree() {
+        auto *operation_node = dynamic_cast<OperationNode *>(expression_);
         if (!operation_node) return;
         operation_node->Simplify();
     }
-
-    Expression::Expression(const std::string& string) {
-        std::stack<Node *> nodes;
-        std::stack<Symbol> symbols;
-
-        for (auto character : string) {
-            switch (character) {
-                case ' ': {   // Empty line
-                    continue;
-                }
-                case '1':     // Constants
-                case '0': {
-                    nodes.push(new ConstNode(character - '0'));
-                    break;
-                }
-                default: {    // Operator or variable
-                    if (character >= 'a' && character <= 'z') {
-                        nodes.push(new VariableNode(character));
-                    } else {
-                        bool skip = false;
-                        while (!symbols.empty()) {
-                            if (character == kLeftBracket)
-                                break;
-                            if (character == kRightBracket && symbols.top() == kLeftBracket) {
-                                nodes.pop();
-                                skip = true;
-                            }
-                            if (Priority(symbols.top(), Symbol(character)) != 1)
-                                break;
-                            ParseNode(nodes, symbols);
-                        } // while
-                        if (!skip)
-                            symbols.push(Symbol(character));
-                    }
-
-
-                } // default
-
-            } // switch
-        }
-        while (!symbols.empty())
-            ParseNode(nodes, symbols);
-
-        SimplifyTree(nodes.top());
-
-
-        expression_ = nodes.top();
-
-        std::map<char, bool> vars;
-        expression_->FindVariables(vars);
-        size_ = vars.size();
-    }
-
 
     void Expression::IncrementVariables(std::map<char, bool> &vars) {
         for (auto &a : vars) {
@@ -187,48 +239,4 @@ namespace boolcalc {
             }
         }
     }
-
-    void Expression::GenerateTruthTable() {
-        delete[] truth_table_;
-
-        std::map<char, bool> vars;
-        expression_->FindVariables(vars);
-
-        truth_table_ = new bool[1ULL << size_];
-        for (int i = 0; i < 1ULL << size_; ++i) {
-            truth_table_[i] = expression_->Calculate(vars, std::cin, std::cout);
-            IncrementVariables(vars);
-        }
-    }
-
-    void Expression::GenerateZhegalkin() {
-        delete[] zhegalkin_;
-
-        const uint64_t array_size = 1ULL << size_;
-
-        zhegalkin_ = new bool[array_size];
-        bool *tmp =  new bool[array_size];
-
-        if (truth_table_ == nullptr)
-            GenerateTruthTable();
-
-        std::copy(truth_table_, truth_table_ + array_size, zhegalkin_);
-
-        bool flag = true;
-        for (int i = 0; i < size_; ++i) {
-            for (int j = 0; j < array_size; ++j) {
-                if (!(j % (1ULL << i)))
-                    flag = !flag;
-                if (flag) {
-                    tmp[j] = (zhegalkin_[j] != zhegalkin_[j - (1ULL << (i))]);
-                } else {
-                    tmp[j] = zhegalkin_[j];
-                }
-            }
-            std::copy(tmp, tmp + array_size, zhegalkin_);
-        }
-        delete[] tmp;
-    }
-
-
 } // boolcalc

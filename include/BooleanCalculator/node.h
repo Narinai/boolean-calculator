@@ -9,6 +9,7 @@
 #include <map>
 #include <iostream>
 #include <vector>
+#include <set>
 
 #include "strategy.h"
 #include "exception.h"
@@ -24,7 +25,7 @@ namespace boolcalc {
         ) const = 0;
         [[maybe_unused]] [[nodiscard]] virtual std::string String() const = 0;
         virtual Symbol symbol() const = 0;
-        virtual void FindVariables(std::map<char, bool> &vars) const = 0;
+        virtual void FindVariables(std::set<char> &vars) const = 0;
 
         virtual ~Node() = default;
 
@@ -42,7 +43,7 @@ namespace boolcalc {
         ) const override { return value_; };
         [[nodiscard]] std::string String() const override { return std::to_string(value_); }
         [[nodiscard]] enum Symbol symbol() const override { return  kConst; }
-        void FindVariables(std::map<char, bool> &vars) const override { }
+        void FindVariables(std::set<char> &vars) const override { }
 
         ~ConstNode() override = default;
     };
@@ -68,7 +69,7 @@ namespace boolcalc {
             return tmp;
         };
 
-        void FindVariables(std::map<char, bool> &vars) const override { vars[id_] = 0; }
+        void FindVariables(std::set<char> &vars) const override { vars.insert(id_); }
         [[nodiscard]] std::string String() const override { return std::string(1, id_); }
         [[nodiscard]] enum Symbol symbol() const override { return  kVariable; }
         ~VariableNode() override = default;
@@ -81,7 +82,7 @@ namespace boolcalc {
         explicit NegNode(Node *child) : child_(child) { };
         std::string String() const override { return "~" + child_->String(); }
         [[nodiscard]] enum Symbol symbol() const override { return  kNeg; }
-        void FindVariables(std::map<char, bool> &vars) const override {
+        void FindVariables(std::set<char> &vars) const override {
             child_->FindVariables(vars);
         }
 
@@ -115,7 +116,7 @@ namespace boolcalc {
                 children_.insert(children_.begin(), child);
         }
 
-        void FindVariables(std::map<char, bool> &vars) const override {
+        void FindVariables(std::set<char> &vars) const override {
             for (auto child : children_) {
                 child->FindVariables(vars);
             }
