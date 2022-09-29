@@ -6,7 +6,7 @@
 
 namespace boolcalc {
 
-    bool Expression::Priority(const char a, const char b) {
+    int Expression::Priority(Symbol a, Symbol b) {
         // ")\0~\0&\0+\0v\0><=|^\0(\0\0";
         const static char priority[] = {
                 kRightBracket, '\0',
@@ -38,7 +38,7 @@ namespace boolcalc {
                         b_priority = j;
                     }
                     if (a_priority && b_priority) {
-                        return a_priority > b_priority;
+                        return (a_priority > b_priority ? 1 : a_priority < b_priority ? -1 : 0);
                     }
             }
             if (for_break)
@@ -47,7 +47,7 @@ namespace boolcalc {
         return true;
     }
 
-    Node *Expression::ParseNode(std::stack<Node *> &nodes, std::stack<char> &symbols) {
+    Node *Expression::ParseNode(std::stack<Node *> &nodes, std::stack<Symbol> &symbols) {
         Node *new_node = nullptr;
         switch (symbols.top()) {
             case kAnd:
@@ -64,35 +64,35 @@ namespace boolcalc {
                 nodes.pop();
                 Strategy *strategy;
                 switch (symbols.top()) {
-                    case '&': {
+                    case kAnd: {
                         strategy = new And;
                         break;
                     }
-                    case 'v': {
+                    case kOr: {
                         strategy = new Or;
                         break;
                     }
-                    case '>': {
+                    case kImpl: {
                         strategy = new Impl;
                         break;
                     }
-                    case '<': {
+                    case kRevImpl: {
                         strategy = new RevImpl;
                         break;
                     }
-                    case '+': {
+                    case kXor: {
                         strategy = new Xor;
                         break;
                     }
-                    case '=': {
+                    case kEq: {
                         strategy = new Eq;
                         break;
                     }
-                    case '|': {
+                    case kNand: {
                         strategy = new Sheffer;
                         break;
                     }
-                    case '^': {
+                    case kNor: {
                         strategy = new Pierce;
                         break;
                     }
@@ -103,12 +103,13 @@ namespace boolcalc {
                 new_node = tmp;
                 break;
             } // Binary nodes case
-            case '~': { // Unary nodes
+            case kNeg: { // Unary nodes
                 Node *a = nodes.top();
                 nodes.pop();
                 new_node = new NegNode(a);
                 break;
             }
+
         } // Binary/Unary switch
 
         if (new_node != nullptr)
@@ -117,16 +118,15 @@ namespace boolcalc {
         return new_node;
     }
 
-
     void Expression::SimplifyTree(boolcalc::Node *root) {
-        OperationNode *operation_node = dynamic_cast<OperationNode *>(root);
+        auto *operation_node = dynamic_cast<OperationNode *>(root);
         if (!operation_node) return;
         operation_node->Simplify();
     }
 
-    Expression::Expression(std::string string) {
+    Expression::Expression(const std::string& string) {
         std::stack<Node *> nodes;
-        std::stack<char> symbols;
+        std::stack<Symbol> symbols;
 
         for (auto character : string) {
             switch (character) {
@@ -150,12 +150,12 @@ namespace boolcalc {
                                 nodes.pop();
                                 skip = true;
                             }
-                            if (Priority(symbols.top(), character))
+                            if (Priority(symbols.top(), Symbol(character)) != 1)
                                 break;
                             ParseNode(nodes, symbols);
                         } // while
                         if (!skip)
-                            symbols.push(character);
+                            symbols.push(Symbol(character));
                     }
 
 
@@ -163,12 +163,72 @@ namespace boolcalc {
 
             } // switch
         }
-        while (symbols.size() != 0)
+        while (!symbols.empty())
             ParseNode(nodes, symbols);
 
         SimplifyTree(nodes.top());
 
+
         expression_ = nodes.top();
+
+        std::map<char, bool> vars;
+        expression_->FindVariables(vars);
+        size_ = vars.size();
     }
+
+
+    void Expression::IncrementVariables(std::map<char, bool> &vars) {
+        for (auto &a : vars) {
+            if (!a.second) {
+                a.second = true;
+                break;
+            } else {
+                a.second = false;
+            }
+        }
+    }
+
+    void Expression::GenerateTruthTable() {
+        delete[] truth_table_;
+
+        std::map<char, bool> vars;
+        expression_->FindVariables(vars);
+
+        truth_table_ = new bool[1ULL << size_];
+        for (int i = 0; i < 1ULL << size_; ++i) {
+            truth_table_[i] = expression_->Calculate(vars, std::cin, std::cout);
+            IncrementVariables(vars);
+        }
+    }
+
+    void Expression::GenerateZhegalkin() {
+        delete[] zhegalkin_;
+
+        const uint64_t array_size = 1ULL << size_;
+
+        zhegalkin_ = new bool[array_size];
+        bool *tmp =  new bool[array_size];
+
+        if (truth_table_ == nullptr)
+            GenerateTruthTable();
+
+        std::copy(truth_table_, truth_table_ + array_size, zhegalkin_);
+
+        bool flag = true;
+        for (int i = 0; i < size_; ++i) {
+            for (int j = 0; j < array_size; ++j) {
+                if (!(j % (1ULL << i)))
+                    flag = !flag;
+                if (flag) {
+                    tmp[j] = (zhegalkin_[j] != zhegalkin_[j - (1ULL << (i))]);
+                } else {
+                    tmp[j] = zhegalkin_[j];
+                }
+            }
+            std::copy(tmp, tmp + array_size, zhegalkin_);
+        }
+        delete[] tmp;
+    }
+
 
 } // boolcalc

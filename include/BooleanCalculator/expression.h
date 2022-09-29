@@ -13,13 +13,20 @@ namespace boolcalc {
 
     class Expression {
     public:
-        Node *expression_;
-        static bool Priority(const char a, const char b);
-        static Node *ParseNode(std::stack<Node *> &nodes, std::stack<char> &symbols);
-        static void SimplifyTree(Node *root);
+        bool *truth_table_ = nullptr;
+        bool *zhegalkin_ = nullptr;
+        uint32_t size_;
 
+        Node *expression_;
+        static int Priority(Symbol a, Symbol b);
+        static Node *ParseNode(std::stack<Node *> &nodes, std::stack<Symbol> &symbols);
+        static void SimplifyTree(Node *root);
+        static void IncrementVariables(std::map<char, bool> &vars);
+        //std::string BuildNormalForm(bool And);
+        void GenerateTruthTable();
+        void GenerateZhegalkin();
     public:
-        Expression(std::string string);
+        Expression(const std::string& string);
         ~Expression() {};
 
     };

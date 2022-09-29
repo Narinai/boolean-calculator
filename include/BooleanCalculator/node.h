@@ -18,12 +18,13 @@ namespace boolcalc {
     class Node {
     public:
         [[maybe_unused]] [[nodiscard]] virtual bool Calculate(
-                std::map<unsigned int, bool> vars,
+                std::map<char, bool> &vars,
                 std::istream &input,
                 std::ostream &output
         ) const = 0;
         [[maybe_unused]] [[nodiscard]] virtual std::string String() const = 0;
         virtual Symbol symbol() const = 0;
+        virtual void FindVariables(std::map<char, bool> &vars) const = 0;
 
         virtual ~Node() = default;
 
@@ -35,12 +36,13 @@ namespace boolcalc {
         explicit ConstNode(const bool value) : value_(value) { };
 
         [[nodiscard]] bool Calculate(
-                std::map<unsigned int, bool> vars,
+                std::map<char, bool> &vars,
                 std::istream &input,
                 std::ostream &output
         ) const override { return value_; };
         [[nodiscard]] std::string String() const override { return std::to_string(value_); }
         [[nodiscard]] enum Symbol symbol() const override { return  kConst; }
+        void FindVariables(std::map<char, bool> &vars) const override { }
 
         ~ConstNode() override = default;
     };
@@ -51,7 +53,7 @@ namespace boolcalc {
         explicit VariableNode(const char id) : id_(id) { };
 
         [[nodiscard]] bool Calculate(
-                std::map<unsigned int, bool> vars,
+                std::map<char, bool> &vars,
                 std::istream &input,
                 std::ostream &output
         ) const override {
@@ -65,6 +67,8 @@ namespace boolcalc {
             vars.insert({id_, tmp});
             return tmp;
         };
+
+        void FindVariables(std::map<char, bool> &vars) const override { vars[id_] = 0; }
         [[nodiscard]] std::string String() const override { return std::string(1, id_); }
         [[nodiscard]] enum Symbol symbol() const override { return  kVariable; }
         ~VariableNode() override = default;
@@ -77,7 +81,11 @@ namespace boolcalc {
         explicit NegNode(Node *child) : child_(child) { };
         std::string String() const override { return "~" + child_->String(); }
         [[nodiscard]] enum Symbol symbol() const override { return  kNeg; }
-        bool Calculate(std::map<unsigned int, bool> vars, std::istream &input, std::ostream &output) const override { return !child_->Calculate(vars, input, output); }
+        void FindVariables(std::map<char, bool> &vars) const override {
+            child_->FindVariables(vars);
+        }
+
+        bool Calculate(std::map<char, bool> &vars, std::istream &input, std::ostream &output) const override { return !child_->Calculate(vars, input, output); }
     };
 
     class OperationNode : public Node {
@@ -100,12 +108,21 @@ namespace boolcalc {
 
         OperationNode(Strategy *strategy) : strategy_(strategy) { };
 
-        void AddChild(Node *child) {
-            children_.push_back(child);
+        void AddChild(Node *child, bool end = true) {
+            if (end)
+                children_.push_back(child);
+            else
+                children_.insert(children_.begin(), child);
+        }
+
+        void FindVariables(std::map<char, bool> &vars) const override {
+            for (auto child : children_) {
+                child->FindVariables(vars);
+            }
         }
 
         [[maybe_unused]] [[nodiscard]] bool Calculate(
-                std::map<unsigned int, bool> vars,
+                std::map<char, bool> &vars,
                 std::istream &input,
                 std::ostream &output
         ) const override {
