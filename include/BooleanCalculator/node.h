@@ -96,18 +96,6 @@ namespace boolcalc {
         Strategy *strategy_;
         std::vector<Node *> children_ = { };
     public:
-        void Simplify() {
-            for (int i = 0; i != children_.size(); ++i) {
-                if (symbol() == (children_[i])->symbol()) {
-                    OperationNode *operation_node = dynamic_cast<OperationNode *>(children_[i]);
-                    children_.erase(children_.begin()+i);
-                    children_.insert(children_.begin()+i, operation_node->children_.begin(), operation_node->children_.end());
-                    --i;
-                }
-            }
-
-        };
-
         OperationNode(Strategy *strategy) : strategy_(strategy) { };
 
         void AddChild(Node *child, bool end = true) {

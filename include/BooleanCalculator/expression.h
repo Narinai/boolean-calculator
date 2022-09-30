@@ -36,7 +36,6 @@ namespace boolcalc {
 
     private:
         static int Priority(Symbol a, Symbol b);
-        void SimplifyTree();
         static void IncrementVariables(std::map<char, bool> &vars);
         static Node *ParseNode(std::stack<Node *> &nodes, std::stack<Symbol> &symbols);
 

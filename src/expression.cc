@@ -89,10 +89,10 @@ namespace boolcalc {
                             if (character == kLeftBracket)
                                 break;
                             if (character == kRightBracket && symbols.top() == kLeftBracket) {
-                                nodes.pop();
+                                symbols.pop();
                                 skip = true;
                             }
-                            if (Priority(symbols.top(), Symbol(character)) < 0)
+                            if (Priority(symbols.top(), Symbol(character)) == -1)
                                 break;
                             ParseNode(nodes, symbols);
                         }
@@ -106,7 +106,6 @@ namespace boolcalc {
         while (!symbols.empty())
             ParseNode(nodes, symbols);
         expression_ = nodes.top();
-        SimplifyTree();
     }
 
     Expression::~Expression() {
@@ -146,7 +145,7 @@ namespace boolcalc {
     int Expression::Priority(Symbol a, Symbol b) {
         // ")\0~\0&\0+\0v\0><=|^\0(\0\0";
         const static char priority[] = {
-                kRightBracket, '\0',
+                kRightBracket, kLeftBracket, '\0',
                 kNeg, '\0',
                 kAnd, '\0',
                 kXor, '\0',
@@ -235,9 +234,16 @@ namespace boolcalc {
                     }
                 } // operators switch
                 auto tmp = new OperationNode(strategy);
-                tmp->AddChild(a);
-                tmp->AddChild(b);
-                new_node = tmp;
+                if (b->symbol() == tmp->symbol()) {
+                    auto cast = dynamic_cast<OperationNode *>(b);
+                    cast->AddChild(a, false);
+                    delete tmp;
+                    new_node = b;
+                } else {
+                    tmp->AddChild(a);
+                    tmp->AddChild(b);
+                    new_node = tmp;
+                }
                 break;
             } // Binary nodes case
             case kNeg: { // Unary nodes
@@ -253,12 +259,6 @@ namespace boolcalc {
             nodes.push(new_node);
         symbols.pop();
         return new_node;
-    }
-
-    void Expression::SimplifyTree() {
-        auto *operation_node = dynamic_cast<OperationNode *>(expression_);
-        if (!operation_node) return;
-        operation_node->Simplify();
     }
 
     void Expression::IncrementVariables(std::map<char, bool> &vars) {
