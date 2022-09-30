@@ -30,7 +30,9 @@ namespace boolcalc {
         void GenerateVariables();
     public:
         Expression(const std::string& string);
-        ~Expression() {};
+        ~Expression();
+
+        void TruthTable(std::ostream &output = std::cout);
 
     private:
         static int Priority(Symbol a, Symbol b);
