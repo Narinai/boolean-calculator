@@ -105,11 +105,8 @@ namespace boolcalc {
         }
         while (!symbols.empty())
             ParseNode(nodes, symbols);
-
         expression_ = nodes.top();
-
         SimplifyTree();
-
     }
 
     Expression::~Expression() {
