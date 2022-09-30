@@ -145,12 +145,12 @@ namespace boolcalc {
     int Expression::Priority(Symbol a, Symbol b) {
         // ")\0~\0&\0+\0v\0><=|^\0(\0\0";
         const static char priority[] = {
-                kRightBracket, kLeftBracket, '\0',
                 kNeg, '\0',
                 kAnd, '\0',
                 kXor, '\0',
                 kOr, '\0',
-                kImpl, kRevImpl, kEq, kNand, kNor, '\1'
+                kImpl, kRevImpl, kEq, kNand, kNor,
+                kRightBracket, kLeftBracket, '\0', '\1'
         };
 
         int j = 1;
@@ -174,7 +174,7 @@ namespace boolcalc {
                         b_priority = j;
                     }
                     if (a_priority && b_priority) {
-                        return (a_priority > b_priority ? 1 : a_priority < b_priority ? -1 : 0);
+                        return (a_priority > b_priority ? -1 : a_priority < b_priority ? 1 : 0);
                     }
             }
             if (for_break)
