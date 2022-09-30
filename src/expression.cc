@@ -112,6 +112,40 @@ namespace boolcalc {
 
     }
 
+    Expression::~Expression() {
+        delete[] truth_table_;
+        delete[] zhegalkin_;
+        delete[] variables_;
+        delete expression_;
+    }
+
+    void Expression::TruthTable(std::ostream &output) {
+        GenerateVariables();
+        GenerateString();
+        GenerateTruthTable();
+
+        const uint32_t extend_by = 2;
+        const uint32_t expression_length = string_.size() + extend_by;
+        const uint32_t variables_length = 1 + extend_by;
+
+        // Print title
+        for (int i = 0; i < size_; i++)
+            output << std::setfill(' ') << std::right << std::setw(variables_length) << (variables_[i]);
+        output << std::setfill(' ') << std::right << std::setw(expression_length) << string_ << std::endl;
+
+        // Print values
+        std::map<char, bool> vars;
+        for (int i = 0; i < size_; ++i)
+            vars.insert({variables_[i], false});
+
+        for (int i = 0; i < (1ULL << size_); ++i) {
+            for (int j = 0; j < size_; j++)
+                output << std::setfill(' ') << std::right << std::setw(variables_length) << vars[variables_[j]];
+            output << std::setfill(' ') << std::right << std::setw(expression_length) << truth_table_[i] << std::endl;
+            IncrementVariables(vars);
+        }
+    }
+
     int Expression::Priority(Symbol a, Symbol b) {
         // ")\0~\0&\0+\0v\0><=|^\0(\0\0";
         const static char priority[] = {
