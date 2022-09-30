@@ -69,21 +69,21 @@ namespace boolcalc {
     };
 
 
-    class Sheffer : public Strategy {
+    class Nand : public Strategy {
         [[nodiscard]] Symbol DisplaySign() const override { return Symbol::kNand; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !a || !b;
         }
-        ~Sheffer() override = default;
+        ~Nand() override = default;
     };
 
 
-    class Pierce : public Strategy {
+    class Nor : public Strategy {
         [[nodiscard]] Symbol DisplaySign() const override { return Symbol::kNor; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
             return !a && !b;
         }
-        ~Pierce() override = default;
+        ~Nor() override = default;
     };
 
 } // boolcalc

@@ -229,11 +229,11 @@ namespace boolcalc {
                         break;
                     }
                     case kNand: {
-                        strategy = new Sheffer;
+                        strategy = new Nand;
                         break;
                     }
                     case kNor: {
-                        strategy = new Pierce;
+                        strategy = new Nor;
                         break;
                     }
                 } // operators switch
