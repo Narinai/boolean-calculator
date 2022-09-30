@@ -87,6 +87,8 @@ namespace boolcalc {
         }
 
         bool Calculate(std::map<char, bool> &vars, std::istream &input, std::ostream &output) const override { return !child_->Calculate(vars, input, output); }
+
+        ~NegNode() { delete child_; }
     };
 
     class OperationNode : public Node {
@@ -150,6 +152,9 @@ namespace boolcalc {
         [[nodiscard]] enum Symbol symbol() const override { return  strategy_->DisplaySign(); }
         ~OperationNode() override {
             delete strategy_;
+            for (auto i : children_) {
+                delete i;
+            }
         };
     };
 
