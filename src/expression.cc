@@ -92,7 +92,7 @@ namespace boolcalc {
                                 nodes.pop();
                                 skip = true;
                             }
-                            if (Priority(symbols.top(), Symbol(character)) != 1)
+                            if (Priority(symbols.top(), Symbol(character)) < 0)
                                 break;
                             ParseNode(nodes, symbols);
                         }

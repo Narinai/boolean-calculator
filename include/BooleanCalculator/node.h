@@ -97,16 +97,15 @@ namespace boolcalc {
         std::vector<Node *> children_ = { };
     public:
         void Simplify() {
-            if (symbol() == (children_[1])->symbol()) {
-                OperationNode *operation_node = dynamic_cast<OperationNode *>(children_[1]);
-                children_.erase(children_.begin()+1);
-                children_.insert(children_.end(), operation_node->children_.begin(), operation_node->children_.end());
+            for (int i = 0; i != children_.size(); ++i) {
+                if (symbol() == (children_[i])->symbol()) {
+                    OperationNode *operation_node = dynamic_cast<OperationNode *>(children_[i]);
+                    children_.erase(children_.begin()+i);
+                    children_.insert(children_.begin()+i, operation_node->children_.begin(), operation_node->children_.end());
+                    --i;
+                }
             }
-            if (symbol() == (children_[0])->symbol()) {
-                OperationNode *operation_node = dynamic_cast<OperationNode *>(children_[0]);
-                children_.erase(children_.begin());
-                children_.insert(children_.end(), operation_node->children_.begin(), operation_node->children_.end());
-            }
+
         };
 
         OperationNode(Strategy *strategy) : strategy_(strategy) { };
@@ -131,9 +130,10 @@ namespace boolcalc {
         ) const override {
             if (children_.size() < 2)
                 throw InvalidArgumentCount();
-            bool buffer = children_[0]->Calculate(vars, input, output);
-            for (auto i = children_.begin()+1; i != children_.end(); ++i)
-                buffer = strategy_->Calculate(buffer, (*i)->Calculate(vars, input, output));
+            bool buffer = children_.back()->Calculate(vars, input, output);
+            for (auto i = children_.end()-2; i >= children_.begin(); --i)
+                buffer = strategy_->Calculate((*i)->Calculate(vars, input, output), buffer);
+            std::cout << '\n';
             return buffer;
 
         };
