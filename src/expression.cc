@@ -59,6 +59,7 @@ namespace boolcalc {
         auto j = vars.begin();
         for (int i = 0; i < vars.size(); ++i, ++j)
             variables_[i] = *j;
+        size_ = vars.size();
     }
 
     //
