@@ -37,7 +37,7 @@ namespace boolcalc {
     class Impl : public Strategy {
         [[nodiscard]] Symbol DisplaySign() const override { return Symbol::kImpl; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
-            return !b && a;
+            return !b || a;
         }
         ~Impl() override = default;
     };
@@ -46,7 +46,7 @@ namespace boolcalc {
     class RevImpl : public Strategy {
         [[nodiscard]] Symbol DisplaySign() const override { return Symbol::kRevImpl; }
         [[nodiscard]] bool Calculate(bool a, bool b) const override {
-            return b && !a;
+            return b || !a;
         }
         ~RevImpl() override = default;
     };
