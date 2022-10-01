@@ -62,6 +62,10 @@ namespace boolcalc {
         size_ = vars.size();
     }
 
+    Expression::Expression(boolcalc::Node *node) : expression_(node) {
+
+    }
+
     //
     // Public
     //
@@ -105,14 +109,85 @@ namespace boolcalc {
         }
         while (!symbols.empty())
             ParseNode(nodes, symbols);
-        expression_ = nodes.top();
+        expression_ = std::shared_ptr<Node>(nodes.top());
+    }
+
+    Expression::Expression(const boolcalc::Expression &expression) {
+        if (expression.size_ != -1) {
+            if (expression.truth_table_ != nullptr){
+                truth_table_ = new bool[1 << expression.size_];
+                for (int i = 0; i < 1 << expression.size_; ++i) {
+                    truth_table_[i] = expression.truth_table_[i];
+                }
+            }
+            if (expression.zhegalkin_ != nullptr) {
+                zhegalkin_ = new bool[1 << expression.size_];
+                for (int i = 0; i < 1 << expression.size_; ++i) {
+                    zhegalkin_[i] = expression.zhegalkin_[i];
+                }
+            }
+            if (expression.variables_ != nullptr) {
+                variables_ = new char[expression.size_];
+                for (int i = 0; i < expression.size_; ++i) {
+                    variables_[i] = expression.variables_[i];
+                }
+            }
+        }
     }
 
     Expression::~Expression() {
         delete[] truth_table_;
         delete[] zhegalkin_;
         delete[] variables_;
-        delete expression_;
+    }
+
+    std::string Expression::String() {
+        GenerateString();
+        return string_;
+    }
+
+    Expression Expression::CNF() {
+        GenerateTruthTable();
+        GenerateVariables();
+
+        auto *result = new OperationNode(new And);
+
+        for (int i = 0; i < 1ULL << size_; ++i) {
+            if (!truth_table_[i]) {
+                auto element = new OperationNode(new Or);
+                for (int k = 0; k < size_; ++k) {
+                    Node *var = new VariableNode(variables_[k]);
+                    if (i >> k & 0b1) {
+                        var = new NegNode(var);
+                    }
+                    element->AddChild(var, false);
+                }
+                result->AddChild(element, false);
+            }
+        }
+        return Expression(result);
+    }
+
+    Expression Expression::DNF() {
+        GenerateTruthTable();
+        GenerateVariables();
+
+        auto *result = new OperationNode(new Or);
+
+        for (int i = 0; i < 1ULL << size_; ++i) {
+            if (truth_table_[i]) {
+                auto element = new OperationNode(new And);
+                for (int k = 0; k < size_; ++k) {
+                    Node *var = new VariableNode(variables_[k]);
+                    if (!(i >> k & 0b1)) {
+                        var = new NegNode(var);
+                    }
+                    element->AddChild(var, false);
+                }
+                result->AddChild(element, false);
+            }
+        }
+        return Expression(result);
     }
 
     void Expression::TruthTable(std::ostream &output) {
