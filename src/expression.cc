@@ -74,20 +74,70 @@ Expression::Expression(const std::string& string) {
   std::stack<Node *> nodes;
   std::stack<Symbol> symbols;
 
+  bool expect_var = true;
+  int bracket_counter = 0;
+
   for (auto character : string) {
+
     switch (character) {
       case ' ': {   // Empty line
         continue;
       }
       case '1':     // Constants
       case '0': {
+        if (!expect_var)
+          throw UnexpectedSign("constant");
+
+        expect_var = false;
+
         nodes.push(new ConstNode(character - '0'));
         break;
       }
       default: {    // Operator or variable
         if (character >= 'a' && character <= 'z') {
+          if (!expect_var) {
+            throw UnexpectedSign("variable");
+          }
+          expect_var = false;
+
           nodes.push(new VariableNode(character));
         } else {
+          switch (character) {
+            case kLeftBracket: {
+              ++bracket_counter;
+              if (!expect_var) {
+                throw UnexpectedSign("(");
+              }
+              expect_var = true;
+              break;
+            }
+            case kRightBracket: {
+              --bracket_counter;
+              if (expect_var) {
+                throw UnexpectedSign(")");
+              }
+              break;
+            }
+            case kNeg: {
+              if (!expect_var)
+                throw UnexpectedSign("~");
+              expect_var = true;
+              break;
+            }
+            case kAnd:
+            case kOr:
+            case kImpl:
+            case kRevImpl:
+            case kXor:
+            case kEq:
+            case kNand:
+            case kNor:{
+              if (expect_var)
+                throw UnexpectedSign("binary operation");
+              expect_var = true;
+            }
+          }
+
           bool skip = false;
           while (!symbols.empty()) {
             if (character == kLeftBracket)
@@ -95,7 +145,14 @@ Expression::Expression(const std::string& string) {
             if (character == kRightBracket && symbols.top() == kLeftBracket) {
               symbols.pop();
               skip = true;
+              break;
             }
+            if (character == kNeg && symbols.top() == kNeg){
+              skip = true;
+              symbols.pop();
+              break;
+            }
+
             if (Priority(symbols.top(), Symbol(character)) == -1)
               break;
             ParseNode(nodes, symbols);
@@ -107,6 +164,11 @@ Expression::Expression(const std::string& string) {
 
     } // switch
   }
+
+  if (expect_var || bracket_counter != 0) {
+    throw UnexpectedSign("end of line");
+  }
+
   while (!symbols.empty())
     ParseNode(nodes, symbols);
   expression_ = std::shared_ptr<Node>(nodes.top());
@@ -261,7 +323,7 @@ int Expression::Priority(Symbol a, Symbol b) {
       kAnd, '\0',
       kXor, '\0',
       kOr, '\0',
-      kImpl, kRevImpl, kEq, kNand, kNor,
+      kImpl, kRevImpl, kEq, kNand, kNor, '\0',
       kRightBracket, kLeftBracket, '\0', '\1'
   };
 
