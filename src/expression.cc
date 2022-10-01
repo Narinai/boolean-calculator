@@ -190,6 +190,43 @@ namespace boolcalc {
         return Expression(result);
     }
 
+    Expression Expression::Zhegalkin() {
+        GenerateZhegalkin();
+        GenerateVariables();
+
+        auto *result = new OperationNode(new Xor);
+
+        for (int i = 0; i < (1ULL << size_); ++i) {
+            if (zhegalkin_[i]) {
+                int control = 0;
+                char control_element = 0;
+
+                auto element = new OperationNode(new And);
+
+                for (int j = 0; j < size_; ++j) {
+                    if ((i >> j) & 0b1){
+                        control_element = variables_[j];
+                        element->AddChild(new VariableNode(control_element), false);
+                        ++control;
+                    }
+                }
+
+                if (control < 2) {
+                    delete element;
+                    if (control_element != 0) {
+                        result->AddChild(new VariableNode(control_element), false);
+                    } else {
+                        result->AddChild(new ConstNode(true), false);
+                    }
+                } else {
+                    result->AddChild(element, false);
+                }
+            }
+        }
+
+        return Expression(result);
+    }
+
     void Expression::TruthTable(std::ostream &output) {
         GenerateVariables();
         GenerateString();

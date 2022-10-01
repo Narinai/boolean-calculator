@@ -38,6 +38,7 @@ namespace boolcalc {
         std::string String();
         Expression CNF();
         Expression DNF();
+        Expression Zhegalkin();
         void TruthTable(std::ostream &output = std::cout);
 
     private:
