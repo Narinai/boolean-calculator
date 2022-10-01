@@ -62,6 +62,10 @@ namespace boolcalc {
         size_ = vars.size();
     }
 
+    Expression::Expression(boolcalc::Node *node) : expression_(node) {
+
+    }
+
     //
     // Public
     //
@@ -89,10 +93,10 @@ namespace boolcalc {
                             if (character == kLeftBracket)
                                 break;
                             if (character == kRightBracket && symbols.top() == kLeftBracket) {
-                                nodes.pop();
+                                symbols.pop();
                                 skip = true;
                             }
-                            if (Priority(symbols.top(), Symbol(character)) < 0)
+                            if (Priority(symbols.top(), Symbol(character)) == -1)
                                 break;
                             ParseNode(nodes, symbols);
                         }
@@ -105,15 +109,85 @@ namespace boolcalc {
         }
         while (!symbols.empty())
             ParseNode(nodes, symbols);
-        expression_ = nodes.top();
-        SimplifyTree();
+        expression_ = std::shared_ptr<Node>(nodes.top());
+    }
+
+    Expression::Expression(const boolcalc::Expression &expression) {
+        if (expression.size_ != -1) {
+            if (expression.truth_table_ != nullptr){
+                truth_table_ = new bool[1 << expression.size_];
+                for (int i = 0; i < 1 << expression.size_; ++i) {
+                    truth_table_[i] = expression.truth_table_[i];
+                }
+            }
+            if (expression.zhegalkin_ != nullptr) {
+                zhegalkin_ = new bool[1 << expression.size_];
+                for (int i = 0; i < 1 << expression.size_; ++i) {
+                    zhegalkin_[i] = expression.zhegalkin_[i];
+                }
+            }
+            if (expression.variables_ != nullptr) {
+                variables_ = new char[expression.size_];
+                for (int i = 0; i < expression.size_; ++i) {
+                    variables_[i] = expression.variables_[i];
+                }
+            }
+        }
     }
 
     Expression::~Expression() {
         delete[] truth_table_;
         delete[] zhegalkin_;
         delete[] variables_;
-        delete expression_;
+    }
+
+    std::string Expression::String() {
+        GenerateString();
+        return string_;
+    }
+
+    Expression Expression::CNF() {
+        GenerateTruthTable();
+        GenerateVariables();
+
+        auto *result = new OperationNode(new And);
+
+        for (int i = 0; i < 1ULL << size_; ++i) {
+            if (!truth_table_[i]) {
+                auto element = new OperationNode(new Or);
+                for (int k = 0; k < size_; ++k) {
+                    Node *var = new VariableNode(variables_[k]);
+                    if (i >> k & 0b1) {
+                        var = new NegNode(var);
+                    }
+                    element->AddChild(var, false);
+                }
+                result->AddChild(element, false);
+            }
+        }
+        return Expression(result);
+    }
+
+    Expression Expression::DNF() {
+        GenerateTruthTable();
+        GenerateVariables();
+
+        auto *result = new OperationNode(new Or);
+
+        for (int i = 0; i < 1ULL << size_; ++i) {
+            if (truth_table_[i]) {
+                auto element = new OperationNode(new And);
+                for (int k = 0; k < size_; ++k) {
+                    Node *var = new VariableNode(variables_[k]);
+                    if (!(i >> k & 0b1)) {
+                        var = new NegNode(var);
+                    }
+                    element->AddChild(var, false);
+                }
+                result->AddChild(element, false);
+            }
+        }
+        return Expression(result);
     }
 
     void Expression::TruthTable(std::ostream &output) {
@@ -146,12 +220,12 @@ namespace boolcalc {
     int Expression::Priority(Symbol a, Symbol b) {
         // ")\0~\0&\0+\0v\0><=|^\0(\0\0";
         const static char priority[] = {
-                kRightBracket, '\0',
                 kNeg, '\0',
                 kAnd, '\0',
                 kXor, '\0',
                 kOr, '\0',
-                kImpl, kRevImpl, kEq, kNand, kNor, '\1'
+                kImpl, kRevImpl, kEq, kNand, kNor,
+                kRightBracket, kLeftBracket, '\0', '\1'
         };
 
         int j = 1;
@@ -175,7 +249,7 @@ namespace boolcalc {
                         b_priority = j;
                     }
                     if (a_priority && b_priority) {
-                        return (a_priority > b_priority ? 1 : a_priority < b_priority ? -1 : 0);
+                        return (a_priority > b_priority ? -1 : a_priority < b_priority ? 1 : 0);
                     }
             }
             if (for_break)
@@ -235,9 +309,16 @@ namespace boolcalc {
                     }
                 } // operators switch
                 auto tmp = new OperationNode(strategy);
-                tmp->AddChild(a);
-                tmp->AddChild(b);
-                new_node = tmp;
+                if (b->symbol() == tmp->symbol()) {
+                    auto cast = dynamic_cast<OperationNode *>(b);
+                    cast->AddChild(a, false);
+                    delete tmp;
+                    new_node = b;
+                } else {
+                    tmp->AddChild(a);
+                    tmp->AddChild(b);
+                    new_node = tmp;
+                }
                 break;
             } // Binary nodes case
             case kNeg: { // Unary nodes
@@ -253,12 +334,6 @@ namespace boolcalc {
             nodes.push(new_node);
         symbols.pop();
         return new_node;
-    }
-
-    void Expression::SimplifyTree() {
-        auto *operation_node = dynamic_cast<OperationNode *>(expression_);
-        if (!operation_node) return;
-        operation_node->Simplify();
     }
 
     void Expression::IncrementVariables(std::map<char, bool> &vars) {

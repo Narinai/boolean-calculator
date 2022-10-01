@@ -14,29 +14,34 @@
 namespace boolcalc {
 
     class Expression {
-        Node *expression_;
+        std::shared_ptr<Node> expression_;
 
         // Lazy-loaded values
         std::string string_;
         bool *truth_table_ = nullptr;
         bool *zhegalkin_ = nullptr;
         char *variables_ = nullptr;
-        uint32_t size_;
+        int32_t size_ = -1;
 
         // "Lazy-loaders"
         void GenerateString();
         void GenerateTruthTable();
         void GenerateZhegalkin();
         void GenerateVariables();
+
+        Expression(Node *node);
     public:
         Expression(const std::string& string);
+        Expression(const Expression &expression);
         ~Expression();
 
+        std::string String();
+        Expression CNF();
+        Expression DNF();
         void TruthTable(std::ostream &output = std::cout);
 
     private:
         static int Priority(Symbol a, Symbol b);
-        void SimplifyTree();
         static void IncrementVariables(std::map<char, bool> &vars);
         static Node *ParseNode(std::stack<Node *> &nodes, std::stack<Symbol> &symbols);
 

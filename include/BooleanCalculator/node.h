@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <memory>
 
 #include "strategy.h"
 #include "exception.h"
@@ -26,6 +27,7 @@ namespace boolcalc {
         [[maybe_unused]] [[nodiscard]] virtual std::string String() const = 0;
         virtual Symbol symbol() const = 0;
         virtual void FindVariables(std::set<char> &vars) const = 0;
+
 
         virtual ~Node() = default;
 
@@ -44,7 +46,6 @@ namespace boolcalc {
         [[nodiscard]] std::string String() const override { return std::to_string(value_); }
         [[nodiscard]] enum Symbol symbol() const override { return  kConst; }
         void FindVariables(std::set<char> &vars) const override { }
-
         ~ConstNode() override = default;
     };
 
@@ -71,6 +72,7 @@ namespace boolcalc {
 
         void FindVariables(std::set<char> &vars) const override { vars.insert(id_); }
         [[nodiscard]] std::string String() const override { return std::string(1, id_); }
+
         [[nodiscard]] enum Symbol symbol() const override { return  kVariable; }
         ~VariableNode() override = default;
     };
@@ -96,18 +98,6 @@ namespace boolcalc {
         Strategy *strategy_;
         std::vector<Node *> children_ = { };
     public:
-        void Simplify() {
-            for (int i = 0; i != children_.size(); ++i) {
-                if (symbol() == (children_[i])->symbol()) {
-                    OperationNode *operation_node = dynamic_cast<OperationNode *>(children_[i]);
-                    children_.erase(children_.begin()+i);
-                    children_.insert(children_.begin()+i, operation_node->children_.begin(), operation_node->children_.end());
-                    --i;
-                }
-            }
-
-        };
-
         OperationNode(Strategy *strategy) : strategy_(strategy) { };
 
         void AddChild(Node *child, bool end = true) {
@@ -133,7 +123,6 @@ namespace boolcalc {
             bool buffer = children_.back()->Calculate(vars, input, output);
             for (auto i = children_.end()-2; i >= children_.begin(); --i)
                 buffer = strategy_->Calculate((*i)->Calculate(vars, input, output), buffer);
-            std::cout << '\n';
             return buffer;
 
         };
