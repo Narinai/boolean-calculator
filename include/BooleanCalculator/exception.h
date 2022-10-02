@@ -11,7 +11,7 @@
 namespace boolcalc {
 class Exception : public std::exception { };
 
-class InvalidArgumentCount : Exception {
+class InvalidArgumentCount : public Exception {
  public:
   InvalidArgumentCount() : Exception() {}
   const char * what() const noexcept override {
@@ -19,7 +19,7 @@ class InvalidArgumentCount : Exception {
   }
 };
 
-class UnexpectedSign : Exception {
+class UnexpectedSign : public Exception {
   char *string_;
  public:
   UnexpectedSign(char *string) : Exception() {
