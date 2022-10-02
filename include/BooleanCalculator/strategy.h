@@ -8,6 +8,7 @@
 #include "math-symbols.h"
 
 namespace boolcalc {
+
 // Pattern strategy, class OperatorNode uses them to calculate value and fetch symbol
 class Strategy {
  public:

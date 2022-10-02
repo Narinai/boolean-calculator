@@ -212,81 +212,78 @@ Expression Expression::CNF() {
   GenerateTruthTable();
   GenerateVariables();
 
-  auto *result = new OperationNode(new And);
-
+  std::vector<Node *> conjunct;
   for (int i = 0; i < 1ULL << size_; ++i) {
     if (!truth_table_[i]) {
-      auto element = new OperationNode(new Or);
+      std::vector<Node *> disjunct;
       for (int k = 0; k < size_; ++k) {
         Node *var = new VariableNode(variables_[k]);
         if (i >> k & 0b1) {
           var = new NegNode(var);
         }
-        element->AddChild(var, false);
+        disjunct.insert(disjunct.begin(), var);
       }
-      result->AddChild(element, false);
+      conjunct.insert(conjunct.begin(), BuildOperationNode(disjunct, new Or));
     }
   }
-  return Expression(result);
+  auto result = BuildOperationNode(conjunct, new And);
+  if (result)
+    return result;
+  return new ConstNode(true);
 }
 
 Expression Expression::DNF() {
   GenerateTruthTable();
   GenerateVariables();
 
-  auto *result = new OperationNode(new Or);
-
+  std::vector<Node *> disjunct;
   for (int i = 0; i < 1ULL << size_; ++i) {
     if (truth_table_[i]) {
-      auto element = new OperationNode(new And);
+      std::vector<Node *> conjunct;
       for (int k = 0; k < size_; ++k) {
         Node *var = new VariableNode(variables_[k]);
-        if (!(i >> k & 0b1)) {
+        if (i >> k & 0b1) {
           var = new NegNode(var);
         }
-        element->AddChild(var, false);
+        conjunct.insert(conjunct.begin(), var);
       }
-      result->AddChild(element, false);
+      disjunct.insert(disjunct.begin(), BuildOperationNode(conjunct, new And));
     }
   }
-  return Expression(result);
+  auto result = BuildOperationNode(disjunct, new Or);
+  if (result)
+    return result;
+  return new ConstNode(false);
 }
 
 Expression Expression::Zhegalkin() {
   GenerateZhegalkin();
   GenerateVariables();
 
-  auto *result = new OperationNode(new Xor);
+  std::vector<Node *> sum;
 
   for (int i = 0; i < (1ULL << size_); ++i) {
     if (zhegalkin_[i]) {
-      int control = 0;
-      char control_element = 0;
-
       auto element = new OperationNode(new And);
+      std::vector<Node *> conjunct;
 
       for (int j = 0; j < size_; ++j) {
         if ((i >> j) & 0b1){
-          control_element = variables_[j];
-          element->AddChild(new VariableNode(control_element), false);
-          ++control;
+          conjunct.insert(conjunct.begin(), new VariableNode(variables_[j]));
         }
       }
-
-      if (control < 2) {
-        delete element;
-        if (control_element != 0) {
-          result->AddChild(new VariableNode(control_element), false);
-        } else {
-          result->AddChild(new ConstNode(true), false);
-        }
+      if (sum.size() != 0){
+        sum.insert(sum.begin(), BuildOperationNode(conjunct, new And));
       } else {
-        result->AddChild(element, false);
+        sum.insert(sum.begin(), new ConstNode(true));
       }
     }
   }
 
-  return Expression(result);
+  auto result = BuildOperationNode(sum, new Xor);
+  if (result)
+    return result;
+  return new ConstNode(false);
 }
 
 void Expression::TruthTable(std::ostream &output) {
@@ -445,4 +442,21 @@ void Expression::IncrementVariables(std::map<char, bool> &vars) {
     }
   }
 }
+
+// It must handle cases with one child / no children
+Node *Expression::BuildOperationNode(const std::vector<Node *> &nodes, boolcalc::Strategy *strategy) {
+  switch (nodes.size()) {
+    case 0:
+      return nullptr;
+    case 1:
+      return nodes.back();
+    default:
+      auto result = new OperationNode(strategy);
+      for (auto node : nodes) {
+        result->AddChild(node);
+      }
+      return result;
+  }
+}
+
 } // boolcalc

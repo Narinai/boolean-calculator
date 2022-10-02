@@ -94,7 +94,7 @@ class NegNode : public Node {
 
 class OperationNode : public Node {
  protected:
-  Strategy *strategy_;
+  std::shared_ptr<Strategy> strategy_;
   std::vector<Node *> children_ = { };
  public:
   OperationNode(Strategy *strategy) : strategy_(strategy) { };
@@ -105,6 +105,14 @@ class OperationNode : public Node {
     else
       children_.insert(children_.begin(), child);
   }
+
+  void RemoveChildren(bool delete_children = true) {
+    if (delete_children)
+      for (auto child : children_) {
+        delete child;
+      }
+    children_.clear();
+  };
 
   void FindVariables(std::set<char> &vars) const override {
     for (auto child : children_) {
@@ -139,7 +147,6 @@ class OperationNode : public Node {
 
   [[nodiscard]] enum Symbol symbol() const override { return  strategy_->DisplaySign(); }
   ~OperationNode() override {
-    delete strategy_;
     for (auto i : children_) {
       delete i;
     }

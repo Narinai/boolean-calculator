@@ -45,7 +45,7 @@ class Expression {
   static int Priority(Symbol a, Symbol b);
   static void IncrementVariables(std::map<char, bool> &vars);
   static Node *ParseNode(std::stack<Node *> &nodes, std::stack<Symbol> &symbols);
-
+  static Node *BuildOperationNode(const std::vector<Node *> &nodes, Strategy *strategy);
 };
 
 } // boolcalc
